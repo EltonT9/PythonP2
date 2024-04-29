@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources: 
+  Project2ApiGatewayRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ethomas-p2-api
+      StageName: 
+        Ref: Environment
+      Cors:
+        AllowMethods: 'GET, POST, DELETE'
+        AllowHeaders: 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
+        AllowOrigin: "'*'"
+  Project2Get:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ethomas-p2-get
+      CodeUri: ./
+      Handler: read-movies.handler
+      Runtime: nodejs18.x
+      Role: !GetAtt LambdaExecutionRole.arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Project2DynamoDBTable
+      Events:
+        ViewAllMovies:
+          Type: Api
+          Properties:
+            Path: /movies
+            Method: get
+            RestApiId: !Ref Project2ApiGatewayRestApi
+  Project2Post:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ethomas-p2-post
+      CodeUri: ./
+      Handler: create-movie.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.arn 
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Project2DynamoDBTable
+      Events:
+        CreateMovie:
+          Type: Api
+          Properties:
+            Path: /movies
+            Method: post
+            RestApiId: 
+              Ref: Project2ApiGatewayRestApi
+  Project2Delete:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ethomas-p2-delete
+      CodeUri: ./
+      Handler: delete-movie.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.arn 
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Project2DynamoDBTable
+      Events:
+        CreateMovie:
+          Type: Api
+          Properties:
+            Path: /movies
+            Method: delete
+            RestApiId: 
+              Ref: Project2ApiGatewayRestApi
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/LambdaExecutionRole'
+      Policies:
+        - PolicyName: DynamoDbReadWritePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                Resource: 
+                  Fn::GetAtt:
+                    - Project2DynamoDBTable
+                    - Arn
+  
+Outputs:
+  Project2Get:
+    Value: !GetAtt Project2Get.arn
+    Export:
+      Name: Project2Get
+  Project2Post:
+    Value: !GetAtt Project2Post.arn
+    Export:
+      Name: Project2Post
+  Project2Delete:
+    Value: !GetAtt Project2Delete.arn
+    Export:
+      Name: Project2Delete
+

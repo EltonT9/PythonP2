@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Project 2 Serverless Architecture
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ethomas-p2
+  Environment:
+    Type: String
+    Default: dev
+
+Resources: 
+  DynamoDBStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./dynamodb.yaml
+
+  ApiGatewayStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./api.yaml
+    
